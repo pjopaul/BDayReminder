@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ApplicationManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ApplicationTypeName="BDayReminderType" ApplicationTypeVersion="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
+  <Parameters>
+    <Parameter Name="BDayReminder.API_ASPNETCORE_ENVIRONMENT" DefaultValue="" />
+    <Parameter Name="BDayReminder.API_InstanceCount" DefaultValue="-1" />
+    <Parameter Name="BDayReminder.Data_MinReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="BDayReminder.Data_PartitionCount" DefaultValue="1" />
+    <Parameter Name="BDayReminder.Data_TargetReplicaSetSize" DefaultValue="3" />
+  </Parameters>
+  <!-- Import the ServiceManifest from the ServicePackage. The ServiceManifestName and ServiceManifestVersion 
+       should match the Name and Version attributes of the ServiceManifest element defined in the 
+       ServiceManifest.xml file. -->
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="BDayReminder.APIPkg" ServiceManifestVersion="1.0.0" />
+    <ConfigOverrides />
+    <EnvironmentOverrides CodePackageRef="code">
+      <EnvironmentVariable Name="ASPNETCORE_ENVIRONMENT" Value="[BDayReminder.API_ASPNETCORE_ENVIRONMENT]" />
+    </EnvironmentOverrides>
+  </ServiceManifestImport>
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="BDayReminder.DataPkg" ServiceManifestVersion="1.0.0" />
+    <ConfigOverrides />
+  </ServiceManifestImport>
+  <DefaultServices>
+    <!-- The section below creates instances of service types, when an instance of this 
+         application type is created. You can also create one or more instances of service type using the 
+         ServiceFabric PowerShell module.
+         
+         The attribute ServiceTypeName below must match the name defined in the imported ServiceManifest.xml file. -->
+    <Service Name="BDayReminder.API" ServicePackageActivationMode="ExclusiveProcess">
+      <StatelessService ServiceTypeName="BDayReminder.APIType" InstanceCount="[BDayReminder.API_InstanceCount]">
+        <SingletonPartition />
+      </StatelessService>
+    </Service>
+    <Service Name="BDayReminder.Data" ServicePackageActivationMode="ExclusiveProcess">
+      <StatefulService ServiceTypeName="BDayReminder.DataType" TargetReplicaSetSize="[BDayReminder.Data_TargetReplicaSetSize]" MinReplicaSetSize="[BDayReminder.Data_MinReplicaSetSize]">
+        <UniformInt64Partition PartitionCount="[BDayReminder.Data_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+      </StatefulService>
+    </Service>
+  </DefaultServices>
+</ApplicationManifest>
