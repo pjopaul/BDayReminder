@@ -11,6 +11,7 @@ using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Microsoft.ServiceFabric.Data;
+using System.Net.Http;
 
 namespace BDayReminder.API
 {
@@ -40,6 +41,7 @@ namespace BDayReminder.API
                                     .UseKestrel()
                                     .ConfigureServices(
                                         services => services
+                                           
                                             .AddSingleton<StatelessServiceContext>(serviceContext))
                                     .UseContentRoot(Directory.GetCurrentDirectory())
                                     .UseStartup<Startup>()
@@ -48,6 +50,11 @@ namespace BDayReminder.API
                                     .Build();
                     }))
             };
+        }
+
+        internal static Uri GetBDayDataServiceName(ServiceContext context)
+        {
+            return new Uri($"{context.CodePackageActivationContext.ApplicationName}/BDayReminder.Data");
         }
     }
 }

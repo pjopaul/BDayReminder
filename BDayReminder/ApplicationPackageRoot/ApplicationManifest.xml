@@ -34,7 +34,9 @@
     </Service>
     <Service Name="BDayReminder.Data" ServicePackageActivationMode="ExclusiveProcess">
       <StatefulService ServiceTypeName="BDayReminder.DataType" TargetReplicaSetSize="[BDayReminder.Data_TargetReplicaSetSize]" MinReplicaSetSize="[BDayReminder.Data_MinReplicaSetSize]">
-        <UniformInt64Partition PartitionCount="[BDayReminder.Data_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+        <!--<UniformInt64Partition PartitionCount="[BDayReminder.Data_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />-->
+        <UniformInt64Partition PartitionCount="[BDayReminder.Data_PartitionCount]" LowKey="0" HighKey="12" />
+        <!--Data saved with months partition-->
       </StatefulService>
     </Service>
   </DefaultServices>

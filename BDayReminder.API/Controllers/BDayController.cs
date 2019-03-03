@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Fabric;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using BDayReminder.API.ViewModels;
 using BDayReminder.Domain;
@@ -8,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.ServiceFabric.Services.Client;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
+using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Client;
 
 namespace BDayReminder.API.Controllers
 {
@@ -15,30 +18,37 @@ namespace BDayReminder.API.Controllers
     [ApiController]
     public class BDayController : ControllerBase
     {
-       // private readonly IBDayDataService _bDayDataService;
+        private readonly StatelessServiceContext serviceContext;
 
-        public BDayController()
+        public BDayController(StatelessServiceContext context)
         {
-            //this._bDayDataService = GetBDayDataService();
+           
+            this.serviceContext = context;
+           
         }
 
-        private IBDayDataService GetBDayDataService()
+        private IBDayDataService GetBDayDataService(int monthKey = 0)
         {
+
+            long key = GetPartitionKey(monthKey);
+
             return ServiceProxy.Create<IBDayDataService>(
-                                    new Uri("fabric:/BDayReminder/BDayReminder.Data")
-                                    , new ServicePartitionKey(0));
+                                new Uri("fabric:/BDayReminder/BDayReminder.Data")
+                                , new ServicePartitionKey(monthKey));
+            
         }
+
 
         // GET 
         [HttpGet]
         public async Task<IEnumerable<BDayDetails>> Get()
         {
-            // return new [] { new BDayDetails() { BDayId = Guid.NewGuid(), PersonName = "From API", BDayDay = 26, BDayMonth = 2, BDayYear = 1986 } };
 
-            IEnumerable<BDay> allBDays = await GetBDayDataService().GetAll();
+            IEnumerable<BDay> allBDays = await GetBDayDataService(DateTime.Now.Month).GetAll();
 
 
-            return allBDays.Select(b => new BDayDetails {
+            return allBDays.Select(b => new BDayDetails
+            {
 
                 BDayId = b.BDayId,
                 PersonName = b.PersonName,
@@ -46,7 +56,7 @@ namespace BDayReminder.API.Controllers
                 BDayMonth = b.BDayMonth,
                 BDayDay = b.BDayDay
 
-             
+
             });
         }
 
@@ -56,9 +66,8 @@ namespace BDayReminder.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get(Guid bDayItemId)
         {
-            // return new [] { new BDayDetails() { BDayId = Guid.NewGuid(), PersonName = "From API", BDayDay = 26, BDayMonth = 2, BDayYear = 1986 } };
 
-            var bDayItem = await GetBDayDataService().GetBDayDetails(bDayItemId);
+            var bDayItem = await GetBDayDataService(0).GetBDayDetails(bDayItemId);
 
 
             if (bDayItem != null)
@@ -78,16 +87,18 @@ namespace BDayReminder.API.Controllers
             }
             return NotFound();
 
-            
+
         }
 
 
         [HttpPost]
         public async Task Post([FromBody] BDayDetails bDayDetails)
         {
+
+
             var newBDayItem = new BDay()
             {
-               
+
                 PersonName = bDayDetails.PersonName,
                 BDayDay = bDayDetails.BDayDay,
                 BDayMonth = bDayDetails.BDayMonth,
@@ -95,10 +106,10 @@ namespace BDayReminder.API.Controllers
             };
 
 
-            await GetBDayDataService().AddBDay(newBDayItem);
+            await GetBDayDataService(bDayDetails.BDayMonth).AddBDay(newBDayItem);
         }
 
-        
+
 
 
         [HttpGet("{month:int}/{day:int?}")]
@@ -108,14 +119,14 @@ namespace BDayReminder.API.Controllers
 
             if (day.HasValue)
             {
-                allBDays = await GetBDayDataService().GetAllByMonthAndDay((ushort) month, (ushort) day.Value);
+                allBDays = await GetBDayDataService(month).GetAllByMonthAndDay((ushort)month, (ushort)day.Value);
             }
             else
             {
-                allBDays = await GetBDayDataService().GetAllByMonth((ushort)month);
+                allBDays = await GetBDayDataService(month).GetAllByMonth((ushort)month);
             }
 
-            
+
 
 
             return allBDays.Select(b => new BDayDetails
@@ -130,5 +141,16 @@ namespace BDayReminder.API.Controllers
 
             });
         }
+
+
+
+
+        private long GetPartitionKey(int month)
+        {
+            //Partition logic
+            return month;
+
+        }
+
     }
 }
