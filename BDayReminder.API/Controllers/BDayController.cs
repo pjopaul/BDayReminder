@@ -15,21 +15,27 @@ namespace BDayReminder.API.Controllers
     [ApiController]
     public class BDayController : ControllerBase
     {
-        private readonly IBDayDataService _bDayDataService;
+       // private readonly IBDayDataService _bDayDataService;
 
         public BDayController()
         {
-            this._bDayDataService = ServiceProxy.Create<IBDayDataService>(
+            //this._bDayDataService = GetBDayDataService();
+        }
+
+        private IBDayDataService GetBDayDataService()
+        {
+            return ServiceProxy.Create<IBDayDataService>(
                                     new Uri("fabric:/BDayReminder/BDayReminder.Data")
                                     , new ServicePartitionKey(0));
         }
+
         // GET 
         [HttpGet]
         public async Task<IEnumerable<BDayDetails>> Get()
         {
             // return new [] { new BDayDetails() { BDayId = Guid.NewGuid(), PersonName = "From API", BDayDay = 26, BDayMonth = 2, BDayYear = 1986 } };
 
-            IEnumerable<BDay> allBDays = await _bDayDataService.GetAll();
+            IEnumerable<BDay> allBDays = await GetBDayDataService().GetAll();
 
 
             return allBDays.Select(b => new BDayDetails {
@@ -52,7 +58,7 @@ namespace BDayReminder.API.Controllers
         {
             // return new [] { new BDayDetails() { BDayId = Guid.NewGuid(), PersonName = "From API", BDayDay = 26, BDayMonth = 2, BDayYear = 1986 } };
 
-            var bDayItem = await _bDayDataService.GetBDayDetails(bDayItemId);
+            var bDayItem = await GetBDayDataService().GetBDayDetails(bDayItemId);
 
 
             if (bDayItem != null)
@@ -89,7 +95,7 @@ namespace BDayReminder.API.Controllers
             };
 
 
-            await _bDayDataService.AddBDay(newBDayItem);
+            await GetBDayDataService().AddBDay(newBDayItem);
         }
 
         
@@ -102,11 +108,11 @@ namespace BDayReminder.API.Controllers
 
             if (day.HasValue)
             {
-                allBDays = await _bDayDataService.GetAllByMonthAndDay((ushort) month, (ushort) day.Value);
+                allBDays = await GetBDayDataService().GetAllByMonthAndDay((ushort) month, (ushort) day.Value);
             }
             else
             {
-                allBDays = await _bDayDataService.GetAllByMonth((ushort)month);
+                allBDays = await GetBDayDataService().GetAllByMonth((ushort)month);
             }
 
             
