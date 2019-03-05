@@ -4,10 +4,12 @@ using System.Fabric;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using AutoMapper;
 using BDayReminder.API.ViewModels;
 using BDayReminder.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.ServiceFabric.Services.Client;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Client;
@@ -19,12 +21,15 @@ namespace BDayReminder.API.Controllers
     public class BDayController : ControllerBase
     {
         private readonly StatelessServiceContext serviceContext;
+        private readonly LinkGenerator linkGenerator;
+        private readonly IMapper mapper;
 
-        public BDayController(StatelessServiceContext context)
+        public BDayController(StatelessServiceContext context, LinkGenerator linkGenerator, IMapper mapper)
         {
-           
+
             this.serviceContext = context;
-           
+            this.linkGenerator = linkGenerator;
+            this.mapper = mapper;
         }
 
         private IBDayDataService GetBDayDataService(int monthKey = 0)
@@ -35,29 +40,19 @@ namespace BDayReminder.API.Controllers
             return ServiceProxy.Create<IBDayDataService>(
                                 new Uri("fabric:/BDayReminder/BDayReminder.Data")
                                 , new ServicePartitionKey(monthKey));
-            
+
         }
 
 
         // GET 
         [HttpGet]
-        public async Task<IEnumerable<BDayDetails>> Get()
+        public async Task<ActionResult<BDayDetails>> Get()
         {
 
             IEnumerable<BDay> allBDays = await GetBDayDataService(DateTime.Now.Month).GetAll();
 
 
-            return allBDays.Select(b => new BDayDetails
-            {
-
-                BDayId = b.BDayId,
-                PersonName = b.PersonName,
-                BDayYear = b.BDayYear,
-                BDayMonth = b.BDayMonth,
-                BDayDay = b.BDayDay
-
-
-            });
+            return Ok(mapper.Map<BDayDetails[]>(allBDays));
         }
 
 
@@ -72,17 +67,7 @@ namespace BDayReminder.API.Controllers
 
             if (bDayItem != null)
             {
-                return Ok(new BDayDetails
-                {
-
-                    BDayId = bDayItem.BDayId,
-                    PersonName = bDayItem.PersonName,
-                    BDayYear = bDayItem.BDayYear,
-                    BDayMonth = bDayItem.BDayMonth,
-                    BDayDay = bDayItem.BDayDay
-
-
-                });
+                return Ok(mapper.Map<BDayDetails>(bDayItem));
 
             }
             return NotFound();
@@ -92,21 +77,29 @@ namespace BDayReminder.API.Controllers
 
 
         [HttpPost]
-        public async Task Post([FromBody] BDayDetails bDayDetails)
+        public async Task<ActionResult<BDayDetails>> Post(BDayDetails bDayDetails)
         {
 
 
-            var newBDayItem = new BDay()
+
+            var newBDayItem = mapper.Map<BDay>(bDayDetails);
+
+
+            var location = linkGenerator.GetPathByAction("Get", "BDay",
+                                                        new { month = bDayDetails.BDayMonth, day = bDayDetails.BDayDay });
+
+            if (string.IsNullOrWhiteSpace(location))
             {
-
-                PersonName = bDayDetails.PersonName,
-                BDayDay = bDayDetails.BDayDay,
-                BDayMonth = bDayDetails.BDayMonth,
-                BDayYear = bDayDetails.BDayYear
-            };
+                return BadRequest("Invalid BDayDetails data");
+            }
 
 
-            await GetBDayDataService(bDayDetails.BDayMonth).AddBDay(newBDayItem);
+            if (await GetBDayDataService(bDayDetails.BDayMonth).AddBDay(newBDayItem))
+            {
+                return Created(location, mapper.Map<BDayDetails>(newBDayItem));
+            }
+
+            return this.StatusCode(StatusCodes.Status500InternalServerError, "Error while saving the data");
         }
 
 

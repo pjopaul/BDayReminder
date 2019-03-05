@@ -19,16 +19,26 @@ namespace BDayReminder.Data
         {
             this._stateManager = stateManager;
         }
-        public async Task AddBDay(BDay bDay)
+        public async Task<bool> AddBDay(BDay bDay)
         {
-            var bDayData = await _stateManager.GetOrAddAsync<IReliableDictionary<Guid, BDay>>(_reliableBDayData);
-
-            using (var tx = _stateManager.CreateTransaction())
+            try
             {
-                //await bDayData.AddOrUpdateAsync(tx, bDay.BDayId, bDay, (id, value) => bDay);
-                await bDayData.AddAsync(tx, bDay.BDayId, bDay);
+                var bDayData = await _stateManager.GetOrAddAsync<IReliableDictionary<Guid, BDay>>(_reliableBDayData);
 
-                await tx.CommitAsync();
+                using (var tx = _stateManager.CreateTransaction())
+                {
+                    //await bDayData.AddOrUpdateAsync(tx, bDay.BDayId, bDay, (id, value) => bDay);
+                    await bDayData.AddAsync(tx, bDay.BDayId, bDay);
+
+                    await tx.CommitAsync();
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                //TODO:Exception handling
+                return false;
             }
 
         }

@@ -17,7 +17,7 @@ namespace BDayReminder.Data
 
         Task<BDay> GetBDayDetails(Guid bDayId);
 
-        Task AddBDay(BDay bDay);
+        Task<bool> AddBDay(BDay bDay);
 
     }
 }

@@ -24,9 +24,9 @@ namespace BDayReminder.Data
         { }
 
         #region IBDayDataService Members
-        public async Task AddBDay(BDay bDay)
+        public async Task<bool> AddBDay(BDay bDay)
         {
-            await _repo.AddBDay(bDay);
+            return await _repo.AddBDay(bDay);
         }
 
         public async Task<IEnumerable<BDay>> GetAll()
