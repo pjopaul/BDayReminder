@@ -25,9 +25,9 @@ namespace BDayReminder.API.ViewModels
         public ushort? BDayYear { get; set; }
 
         [JsonProperty("bDayMonth")]
-        [Required(ErrorMessage = "bDayMonth is required")]
+        //[Required(ErrorMessage = "bDayMonth is required")]
         [Range(1, 12, ErrorMessage = "Month value should be in between 1 and 12")]
-        public ushort BDayMonth { get; set; }
+        public ushort? BDayMonth { get; set; }
 
         [JsonProperty("bDayDay")]
         [Required(ErrorMessage = "bDayDay is required")]

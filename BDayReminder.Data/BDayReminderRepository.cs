@@ -50,7 +50,7 @@ namespace BDayReminder.Data
 
             using (var tx = _stateManager.CreateTransaction())
             {
-                var allBDayItems = await bDayData.CreateEnumerableAsync(tx, EnumerationMode.Unordered);
+                var allBDayItems = await bDayData.CreateEnumerableAsync(tx, EnumerationMode.Ordered);
 
                 using (var enumerator = allBDayItems.GetAsyncEnumerator())
                 {
@@ -72,7 +72,7 @@ namespace BDayReminder.Data
 
             using (var tx = _stateManager.CreateTransaction())
             {
-                var allBDayItems = await bDayData.CreateEnumerableAsync(tx, EnumerationMode.Unordered);
+                var allBDayItems = await bDayData.CreateEnumerableAsync(tx, EnumerationMode.Ordered);
 
                 using (var enumerator = allBDayItems.GetAsyncEnumerator())
                 {

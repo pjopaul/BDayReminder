@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.ServiceFabric.Services.Client;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
-using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Client;
 
 namespace BDayReminder.API.Controllers
 {
@@ -80,10 +79,50 @@ namespace BDayReminder.API.Controllers
         public async Task<ActionResult<BDayDetails>> Post(BDayDetails bDayDetails)
         {
 
-
-
             var newBDayItem = mapper.Map<BDay>(bDayDetails);
 
+            try
+            {
+                if (!bDayDetails.BDayMonth.HasValue)
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "value for bDayMonth required ");
+                }
+
+                var location = linkGenerator.GetPathByAction("Get", "BDay",
+                                                            new { month = bDayDetails.BDayMonth, day = bDayDetails.BDayDay });
+
+                if (string.IsNullOrWhiteSpace(location))
+                {
+                    return BadRequest("Invalid BDayDetails data");
+                }
+
+
+                if (await GetBDayDataService(bDayDetails.BDayMonth.Value).AddBDay(newBDayItem))
+                {
+                    return Created(location, mapper.Map<BDayDetails>(newBDayItem));
+                }
+
+            }
+            catch ( Exception ex)
+            {
+
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Error while saving the data { ex.Message}");
+
+            }
+            return StatusCode(StatusCodes.Status500InternalServerError, "Error while saving the data ");
+
+        }
+
+        [HttpPost("{month:int}")]
+        public async Task<ActionResult<BDayDetails>> Post(int month,BDayDetails bDayDetails)
+        {
+            //If month is missing from the request then add it from the end point
+            if (!bDayDetails.BDayMonth.HasValue)
+            {
+                bDayDetails.BDayMonth = (ushort) month;
+            }
+           
+            var newBDayItem = mapper.Map<BDay>(bDayDetails);
 
             var location = linkGenerator.GetPathByAction("Get", "BDay",
                                                         new { month = bDayDetails.BDayMonth, day = bDayDetails.BDayDay });
@@ -94,15 +133,13 @@ namespace BDayReminder.API.Controllers
             }
 
 
-            if (await GetBDayDataService(bDayDetails.BDayMonth).AddBDay(newBDayItem))
+            if (await GetBDayDataService(bDayDetails.BDayMonth.Value).AddBDay(newBDayItem))
             {
                 return Created(location, mapper.Map<BDayDetails>(newBDayItem));
             }
 
             return this.StatusCode(StatusCodes.Status500InternalServerError, "Error while saving the data");
         }
-
-
 
 
         [HttpGet("{month:int}/{day:int?}")]
