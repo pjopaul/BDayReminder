@@ -106,7 +106,7 @@ namespace BDayReminder.API.Controllers
 
 
         [HttpGet("{month:int}/{day:int?}")]
-        public async Task<IEnumerable<BDayDetails>> Get(int month, int? day = null)
+        public async Task<ActionResult<BDayDetails>> Get(int month, int? day = null)
         {
             IEnumerable<BDay> allBDays = new List<BDay>();
 
@@ -119,25 +119,16 @@ namespace BDayReminder.API.Controllers
                 allBDays = await GetBDayDataService(month).GetAllByMonth((ushort)month);
             }
 
-
-
-
-            return allBDays.Select(b => new BDayDetails
-            {
-
-                BDayId = b.BDayId,
-                PersonName = b.PersonName,
-                BDayYear = b.BDayYear,
-                BDayMonth = b.BDayMonth,
-                BDayDay = b.BDayDay
-
-
-            });
+            return Ok(mapper.Map<BDayDetails[]>(allBDays));
         }
 
 
 
-
+        /// <summary>
+        /// Get the aprtition key
+        /// </summary>
+        /// <param name="month"></param>
+        /// <returns></returns>
         private long GetPartitionKey(int month)
         {
             //Partition logic
