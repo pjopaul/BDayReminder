@@ -35,7 +35,7 @@ namespace BDayReminder.Data
 
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 //TODO:Exception handling
                 return false;
